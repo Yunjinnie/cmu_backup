@@ -1,0 +1,12 @@
+<?xml version="1.0"?>
+<launch>
+  <arg name="lang_type" default="en"/>
+      
+  <!--en_us -->
+  <group if="$(eval arg('lang_type') == 'en')">
+    <node name="iat_cn"  pkg="jetbot_pro"  type="songmu_vad.py" output="screen" >
+      <param name="Mode" value="talk_en"/>
+    </node>
+  </group>
+  
+</launch>

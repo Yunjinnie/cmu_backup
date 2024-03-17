@@ -1,0 +1,15 @@
+<?xml version="1.0"?>
+<launch>
+  <include file="$(find jetbot_pro)/launch/capture.launch" />
+  <include file="$(find jetbot_pro)/launch/play.launch" />
+  <arg name="lang_type" default="en"/>
+      
+  <!--en_us -->
+  <group if="$(eval arg('lang_type') == 'en')">
+    <node name="iat_cn"  pkg="jetbot_pro"  type="songmu_vad_llama.py" output="screen" >
+      <param name="Mode" value="asr_en"/>
+      <param name="Path" value="$(find jetbot_pro)"/>
+    </node>
+    <!-- <node name="audio_subscriber" pkg="audio_capture" type="audio_subscriber_node" output="screen"/> -->
+  </group>
+</launch>
