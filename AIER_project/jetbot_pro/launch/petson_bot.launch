@@ -1,0 +1,95 @@
+<?xml version="1.0"?>
+<launch>
+  <include file="$(find jetbot_pro)/launch/move_base.launch" />
+  <!-- Include and Start the LiDAR node -->
+  <include file="$(find jetbot_pro)/launch/lidar.launch" />
+
+  <arg name="sensor_id" default="0" />
+  <arg name="cam_name" default="csi_cam_$(arg sensor_id)" />
+  <!-- The TF frame ID. -->
+  <arg name="frame_id" default="/$(arg cam_name)_link" />
+  <!-- Synchronize the app sink. Setting this to false may resolve problems with sub-par framerates. -->
+  <arg name="sync_sink" default="false" />
+  <!-- Image Width/Height to stream -->
+  <arg name="width" default="640" />
+  <arg name="height" default="480" />
+  <!-- Desired framerate. True framerate may not reach this if set too high. -->
+  <arg name="fps" default="20" />
+  <arg name="flip_method" default="0" />
+  <arg name="load_camera_info" default="true" />
+  <arg name="camera_info_url" default="file://$(find jetbot_pro)/config/camera_calibration/cam_640x480.yaml" />
+
+  <arg name="lang_type" default="en"/>
+
+  <param name="use_sim_time" value="false" />
+
+  <!-- Make arguments available to parameter server -->
+  <param name="$(arg cam_name)/camera_id" type="int" value="$(arg sensor_id)" />
+  <param name="$(arg cam_name)/image_width" type="int" value="$(arg width)" />
+  <param name="$(arg cam_name)/image_height" type="int" value="$(arg height)" />
+  <param name="$(arg cam_name)/target_fps" type="int" value="$(arg fps)" />
+
+  <!-- Define the camera calibration parameter -->
+  <param name="$(arg cam_name)/camera_info_url" type="string" if="$(arg load_camera_info)" value="$(arg camera_info_url)" />
+
+  <!-- Define the GSCAM pipeline -->
+  <param name="$(arg cam_name)/gscam_config" type="string" value="nvarguscamerasrc sensor-id=$(arg sensor_id) ! video/x-raw(memory:NVMM),
+    width=(int)$(arg width), height=(int)$(arg height), format=(string)NV12, framerate=(fraction)$(arg fps)/1 !
+    nvvidconv flip-method=$(arg flip_method) ! videoconvert" />
+
+  <!-- Start the jetbot node -->
+  <node pkg="jetbot_pro" type="jetbot" name="jetbot" output="screen" respawn="true">
+    <param name="port_name" value="/dev/ttyACM0"/>
+    <param name="linear_correction" value="1.0"/>
+    <param name="angular_correction" value="1.0"/>
+    <remap from="/odom" to="/odom_raw"/>
+    <param name="publish_odom_transform" value="false"/>
+  </node>
+  <node pkg="robot_pose_ekf" type="robot_pose_ekf" name="robot_pose_ekf" output="screen">
+    <param name="output_frame" value="odom"/>
+    <param name="base_footprint_frame" value="base_footprint"/>
+    <param name="freq" value="30.0"/>
+    <param name="sensor_timeout" value="0.5"/>
+    <param name="odom_used" value="true"/>
+    <param name="imu_used" value="true"/>
+    <param name="vo_used" value="false"/>
+    <param name="debug" value="false"/>
+    <param name="self_diagnose" value="false"/>
+    <remap from="odom" to="/odom_raw"/>
+    <remap from="/imu_data" to="/imu"/>
+    <remap from="/robot_pose_ekf/odom_combined" to="/odom_combined"/>
+  </node>
+  <!-- <node pkg="jetbot_pro" type="odom_ekf.py" name="odom_ekf_node" output="screen"/> -->
+  <!--
+  <node pkg="jetbot_pro" type="petson_odom_with_avoidance.py" name="odom_ekf_node" output="screen"/>
+  <node pkg="tf" type="static_transform_publisher" name="map_to_odom"
+	  args="0.0 0.0 0.0 0 0 0.0 /map /odom 40" />
+  <node pkg="tf" type="static_transform_publisher" name="odom_to_basefootprint"
+	  args="0.0 0.0 0.0 0 0 0.0 /odom /base_footprint 40" />
+  <node pkg="tf" type="static_transform_publisher" name="base_footprint_to_base_link"
+	  args="0.0 0.0 0.0 0 0 0.0 /base_footprint /base_link 40" />-->
+  <!--<node pkg="tf" type="static_transform_publisher" name="base_link_to_laser"
+	  args="0.2245 0.0 0.2 0.0 0.0 0.0 /base_link /laser_frame 40" /> -->
+  <node pkg="tf" type="static_transform_publisher" name="base_footprint_to_imu" args="0 0 0.07 0 0 0 base_footprint base_imu_link 20"/> 
+
+  <!-- Start the GSCAM node -->
+  <node pkg="gscam" type="gscam" name="$(arg cam_name)" output="screen">
+    <param name="camera_name" value="$(arg cam_name)" />
+    <param name="frame_id" value="$(arg frame_id)" />
+    <param name="sync_sink" value="$(arg sync_sink)" />
+    <remap from="camera/image_raw" to="$(arg cam_name)/image_raw" />
+    <remap from="/set_camera_info" to="$(arg cam_name)/set_camera_info" />
+  </node>
+
+  <!-- Start the tts node -->
+  <!-- en_us -->
+  <node pkg="jetbot_pro" type="tts_en.py" name="tts_en" output="screen" />
+
+  <!-- laser_filter -->
+  <!-- <node pkg="jetbot_pro" type="laser_filter.py" name="laser_filter" output="screen" /> -->
+
+  <!-- slam (mapping) -->
+  <include file="$(find jetbot_pro)/launch/gmapping.launch" />
+  <include file="$(find jetbot_pro)/launch/hector.launch" />
+
+</launch>
