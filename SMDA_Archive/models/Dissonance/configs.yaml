@@ -1,0 +1,68 @@
+wandb:
+  login: 
+    key: "99975cd8f95af3ba68278d2484eb109af43a4a64" ### Login key / Don't change
+  init: ### Ref: https://docs.wandb.ai/ref/python/init
+    project: "SMDA_Project" ### Dont't change
+    entity: "cmu_23f_iitp_smad_dfd" ### Your wandb profile name (=id)
+    save_code: true ### Don't change
+    group: "" ### Don't change / Ref: https://docs.wandb.ai/guides/runs/grouping
+    job_type: "train" ### "data-preprocess", "train", "test", "visualize" etc...
+    tags: ["Baseline", "Dissonance"] ### [Network, Size, etc...]
+    name: "[JTW]_Baseline_Multimodal_Dissonance" ### "Network"_"Size"_"Version" | Version policy: v{Architecture change}_{Method/Block change}_{Layer/Minor change}
+    notes: "Adaptation of Dissonance method to our benchmark" ### Insert changes(plz write details)
+    dir: "./wandb" ### Don't change
+    resume: "auto" ### Don't change
+    reinit: false ### Don't change
+    magic: null ### Don't change
+    config_exclude_keys: [] ### Don't change
+    config_include_keys: [] ### Don't change
+    anonymous: null ### Don't change
+    mode: "online" ### Don't change
+    allow_val_change: true ### Don't change
+    force: false ### Don't change
+    sync_tensorboard: false ### Don't change
+    monitor_gym: false ### Don't change
+    config:
+      dataset:
+        data_path: "/home/work/jtw/smda/auvis/dataset"
+      dataloader:
+        batch_size: 512 #128 #32
+        pin_memory: true
+        num_workers: 0 #30 #0 #12
+      model:
+        visual_shape: (32, 1, 3, 224, 224) #(32, 2, 3, 224, 224)
+        audio_shape: (32, 1, 1, 13, 87) #(32, 2, 3, 224, 224)
+        num_classes: 4 #2
+      criterion: ### Ref: https://pytorch.org/docs/stable/nn.html#loss-functions
+        name: "Dissonance" #"CrossEntropyLoss" ### Choose a torch.nn's class(=attribute) e.g. ["CrossEntropyLoss", "MSELoss", "Custom", ...] / You can build your criterion :)
+      optimizer: ### Ref: https://pytorch.org/docs/stable/optim.html#algorithms
+        name: "Adam" ### Choose a torch.optim's class(=attribute) e.g. ["Adam", "AdamW", "SGD", ...] / You can build your optimizer :)
+        Adam: ### Add or modify instance & args using reference link
+          lr: 1.0e-1
+          weight_decay: 1.0e-2
+        AdamW:
+          lr: 2.0e-3
+          weight_decay: 1.0e-4
+        SGD:
+          lr: 2.0e-3
+          momentum: 0.9
+          weight_decay: 1.0e-4
+        Custom:
+          custom_arg1:
+          custom_arg2:
+      scheduler: ### Ref(+ find "How to adjust learning rate"): https://pytorch.org/docs/stable/optim.html#algorithms
+        name: "StepLR" ### Choose a torch.optim.lr_scheduler's class(=attribute) e.g. ["StepLR", "ReduceLROnPlateau", "Custom"] / You can build your scheduler :)
+        StepLR: ### Add or modify instance & args using reference link
+          step_size: 5
+          gamma: 0.9
+        ReduceLROnPlateau:
+          mode: "min"
+          min_lr: 1.0e-10
+          factor: 0.9
+          patience: 5
+        Custom:
+          custom_arg1:
+          custom_arg2:
+      engine:
+        epoch: 50 #200
+        gpuid: "0" ### "0"(single-gpu) or "0, 1" (multi-gpu)
